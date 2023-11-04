@@ -37,3 +37,5 @@ Admin/libs
 Server/libs/BaseQT
 Server/libs/BaseSTL
 Server/libs/PostgresDB
+/excercise.md
+Client/output

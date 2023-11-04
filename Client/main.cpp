@@ -4,7 +4,7 @@
 #include <QApplication>
 
 #include "windows.h"
-#include "CarRent.h"
+#include "CarRentClient.h"
 
 //#include <QCoreApplication>
 #include <QDebug>
@@ -17,7 +17,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE h0, LPTSTR lpCmdLine, int nCmdShow
     char* argv[] = { "" };
     int argc = 1;
     QApplication app(argc, argv);
-    CarRentForm calculator;
+    CarRentClientForm calculator;
 
     calculator.show();
     return app.exec();
