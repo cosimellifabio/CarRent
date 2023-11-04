@@ -12,6 +12,7 @@
 
 #include "UserModel.h"
 #include "CarModel.h"
+#include "LocationsModel.h"
 #include <QSqlDatabase.h>
 
 class CarRentClientForm : public QWidget
@@ -36,11 +37,13 @@ private slots:
 	void createUser();
 	void deleteUser();
 	void editUser();
+	void loginUser();
 	void setUser(const QItemSelection& selected, const QItemSelection& deselected);
+	
 	void refreshCar();
-	void createCar();
-	void deleteCar();
-	void editCar();
+	void buyTrip();
+	void loadTrip();
+	//void editCar();
 	void setCar(const QItemSelection& selected, const QItemSelection& deselected);
 	void refreshAll();
 private:
@@ -50,6 +53,7 @@ private:
 
 	UserModel* m_userModel;
 	CarModel* m_carModel;
+	LocationsModel* m_locModel;
 };
 //! [1]
 

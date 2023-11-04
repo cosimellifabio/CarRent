@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>CarRentClient</class>
- <widget class="QWidget" name="CarRent">
+ <widget class="QWidget" name="CarRentClient">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -17,13 +17,13 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>CarRent Admin Form</string>
+   <string>CarRent Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>CarRent Admin 1.0</string>
+      <string>CarRent 1.0</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
@@ -46,6 +46,12 @@
          </property>
          <item>
           <widget class="QGroupBox" name="groupBox_6">
+           <property name="maximumSize">
+            <size>
+             <width>850</width>
+             <height>16777215</height>
+            </size>
+           </property>
            <property name="title">
             <string/>
            </property>
@@ -68,16 +74,6 @@
                <string>Users</string>
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_6">
-               <item>
-                <widget class="QTableView" name="tblUsers">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                </widget>
-               </item>
                <item>
                 <widget class="QGroupBox" name="groupBox_10">
                  <property name="maximumSize">
@@ -200,6 +196,13 @@
                       <number>2</number>
                      </property>
                      <item>
+                      <widget class="QPushButton" name="btnLogin">
+                       <property name="text">
+                        <string>LOGIN</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
                       <widget class="QPushButton" name="btnUserCreate">
                        <property name="maximumSize">
                         <size>
@@ -244,60 +247,29 @@
                  </layout>
                 </widget>
                </item>
-              </layout>
-             </widget>
-            </item>
-            <item>
-             <widget class="QGroupBox" name="groupBox_9">
-              <property name="title">
-               <string>Cars</string>
-              </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_5">
-               <item>
-                <widget class="QTableView" name="tblCars"/>
-               </item>
                <item>
                 <widget class="QGroupBox" name="groupBox_11">
                  <property name="maximumSize">
                   <size>
-                   <width>400</width>
+                   <width>500</width>
                    <height>16777215</height>
                   </size>
                  </property>
                  <property name="title">
-                  <string>Edit - Create</string>
+                  <string>TRIP</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_18">
                   <item>
-                   <widget class="QGroupBox" name="groupBox_22">
-                    <property name="title">
-                     <string>ID</string>
-                    </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_16">
-                     <property name="bottomMargin">
-                      <number>2</number>
-                     </property>
-                     <item>
-                      <widget class="QLineEdit" name="nedCarId">
-                       <property name="enabled">
-                        <bool>false</bool>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QGroupBox" name="groupBox_21">
+                   <widget class="QGroupBox" name="groupBox_17">
                     <property name="title">
                      <string>Name</string>
                     </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_15">
+                    <layout class="QVBoxLayout" name="verticalLayout_12">
                      <property name="bottomMargin">
                       <number>2</number>
                      </property>
                      <item>
-                      <widget class="QLineEdit" name="nedCarName"/>
+                      <widget class="QLineEdit" name="nedTripName"/>
                      </item>
                     </layout>
                    </widget>
@@ -305,14 +277,17 @@
                   <item>
                    <widget class="QGroupBox" name="groupBox_18">
                     <property name="title">
-                     <string>Brand</string>
+                     <string>From/To</string>
                     </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_13">
+                    <layout class="QHBoxLayout" name="horizontalLayout_7">
                      <property name="bottomMargin">
                       <number>2</number>
                      </property>
                      <item>
-                      <widget class="QLineEdit" name="nedCarBrand"/>
+                      <widget class="QComboBox" name="cmbFrom"/>
+                     </item>
+                     <item>
+                      <widget class="QComboBox" name="cmbTo"/>
                      </item>
                     </layout>
                    </widget>
@@ -320,29 +295,44 @@
                   <item>
                    <widget class="QGroupBox" name="groupBox_23">
                     <property name="title">
-                     <string>Tail Number</string>
+                     <string>Date From/To</string>
                     </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_17">
+                    <layout class="QVBoxLayout" name="verticalLayout_13">
                      <property name="bottomMargin">
                       <number>2</number>
                      </property>
                      <item>
-                      <widget class="QLineEdit" name="nedCarTail"/>
+                      <widget class="QDateTimeEdit" name="dateTo"/>
+                     </item>
+                     <item>
+                      <widget class="QDateTimeEdit" name="dateFrom"/>
                      </item>
                     </layout>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QGroupBox" name="groupBox_17">
+                   <widget class="QGroupBox" name="groupBox_20">
                     <property name="title">
-                     <string>Class</string>
+                     <string>Passengers</string>
                     </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_12">
+                    <layout class="QHBoxLayout" name="horizontalLayout_8">
+                     <item>
+                      <widget class="QComboBox" name="cmbPassengers"/>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="groupBox_21">
+                    <property name="title">
+                     <string>Car</string>
+                    </property>
+                    <layout class="QHBoxLayout" name="horizontalLayout_9">
                      <property name="bottomMargin">
                       <number>2</number>
                      </property>
                      <item>
-                      <widget class="QLineEdit" name="nedCarClass"/>
+                      <widget class="QLineEdit" name="nedCarName"/>
                      </item>
                     </layout>
                    </widget>
@@ -363,10 +353,10 @@
                       <number>2</number>
                      </property>
                      <item>
-                      <widget class="QPushButton" name="btnCarCreate">
+                      <widget class="QPushButton" name="btnTrip">
                        <property name="maximumSize">
                         <size>
-                         <width>100</width>
+                         <width>1</width>
                          <height>16777215</height>
                         </size>
                        </property>
@@ -376,7 +366,7 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QPushButton" name="btnCarDelete">
+                      <widget class="QPushButton" name="btnTripLoad">
                        <property name="maximumSize">
                         <size>
                          <width>100</width>
@@ -384,12 +374,12 @@
                         </size>
                        </property>
                        <property name="text">
-                        <string>DELETE</string>
+                        <string>LOAD</string>
                        </property>
                       </widget>
                      </item>
                      <item>
-                      <widget class="QPushButton" name="btnCarUser">
+                      <widget class="QPushButton" name="btnTripBuy">
                        <property name="maximumSize">
                         <size>
                          <width>16777215</width>
@@ -397,7 +387,7 @@
                         </size>
                        </property>
                        <property name="text">
-                        <string>EDIT</string>
+                        <string>BUY</string>
                        </property>
                       </widget>
                      </item>
@@ -406,6 +396,18 @@
                   </item>
                  </layout>
                 </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBox_9">
+              <property name="title">
+               <string>Cars</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_5">
+               <item>
+                <widget class="QTableView" name="tblCars"/>
                </item>
               </layout>
              </widget>

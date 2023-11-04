@@ -12,22 +12,17 @@ void UserModel::init() {
     this->setHeaderData(0, Qt::Horizontal, QObject::tr("ID"));
     this->setHeaderData(1, Qt::Horizontal, QObject::tr("First name"));
     this->setHeaderData(2, Qt::Horizontal, QObject::tr("Last name"));
-    m_view->setModel(this);
-    m_view->setWindowTitle("USERS");
-    m_view->setSelectionBehavior(QAbstractItemView::SelectRows);
+    if (m_view) {
+        m_view->setModel(this);
+        m_view->setWindowTitle("USERS");
+        m_view->setSelectionBehavior(QAbstractItemView::SelectRows);
+    }
 };
 //--------------------------------------------------------------------------------
 void UserModel::show() {
 
-    /*    this->setQuery(QSqlQuery("SELECT * FROM users"));
-
-        for (int i = 0; i < this->rowCount(); ++i) {
-            int id = this->record(i).value("id").toInt();
-            QString name = this->record(i).value("name").toString();
-            qDebug() << id << name;
-        }*/
     select();
-    m_view->show();
+    if (m_view) m_view->show();
 };
 //--------------------------------------------------------------------------------
 bool UserModel::create(QSqlDatabase db, const QString& name, const QString& surname, const QString& address, const QString& credit, const QString& driving)
@@ -118,6 +113,33 @@ bool UserModel::deleteUser(QSqlDatabase db, int id)
     if (query.exec()) {
 
         return true;
+    }
+    return false;
+}
+//--------------------------------------------------------------------------------
+bool UserModel::getLogin(QSqlDatabase db, const QString& name, const QString& surname, int &id, QString& address, QString& credit, QString& driving)
+{
+    QSqlQuery query(db);
+
+    QString q = QString("SELECT * from %1  WHERE name = :name AND  surname = :surname ").arg(userTableName);
+
+    query.prepare(q);
+    query.bindValue(":name", name);
+    query.bindValue(":surname", surname);
+
+    if (query.exec()) {
+
+        if (query.next()) {
+            QSqlRecord reci = query.record();
+
+            id = reci.value(0).toInt();
+            address = reci.value(3).toString();
+            credit = reci.value(4).toString();
+            driving = reci.value(5).toString();
+
+            qDebug() << id << name << "\n";
+            return true;
+        }
     }
     return false;
 }

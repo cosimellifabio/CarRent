@@ -13,6 +13,8 @@ public:
     bool selectUser(QSqlDatabase db, int id, QString& name, QString& surname, QString& address, QString& credit, QString& driving);
     bool deleteUser(QSqlDatabase db, int id);
     bool edit(QSqlDatabase db, int id, const QString& name, const QString& surname, const QString& address, const QString& credit, const QString& driving);
+
+    bool getLogin(QSqlDatabase db, const QString& name, const QString& surname, int& id,  QString& address,  QString& credit,  QString& driving);
 protected:
 	static const QString userTableName;
 

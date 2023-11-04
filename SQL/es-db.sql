@@ -62,19 +62,22 @@ CREATE TABLE public.destinations (
 
 CREATE TABLE public.rents (
     id bigserial,
-	"name" character varying(255),
-    "user" bigint,
-	"car" bigint,
-	"from" bigint,
-	"to" bigint,
+	name character varying(255),
+    userid bigint,
+	car bigint,
+	fromloc bigint,
+	toloc bigint,
+	passengers smallint,
+    date_from timestamp with time zone NOT NULL default now(),
+    date_to timestamp with time zone NOT NULL default now(),
 
     createdAt timestamp with time zone NOT NULL default now(),
     updatedAt timestamp with time zone NOT NULL default now(),
     CONSTRAINT rents_pkey PRIMARY KEY (id),
-	CONSTRAINT "rents_user_fkey" FOREIGN KEY ("user") REFERENCES "public"."users" ("id") ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT "rents_car_fkey" FOREIGN KEY ("car") REFERENCES "public"."cars" ("id") ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT "rents_from_fkey" FOREIGN KEY ("from") REFERENCES "public"."destinations" ("id") ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT "rents_to_fkey" FOREIGN KEY ("to") REFERENCES "public"."destinations" ("id") ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT "rents_user_fkey" FOREIGN KEY (userid) REFERENCES "public"."users" (id) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT "rents_car_fkey" FOREIGN KEY (car) REFERENCES "public"."cars" (id) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT "rents_from_fkey" FOREIGN KEY (fromloc) REFERENCES "public"."destinations" (id) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT "rents_to_fkey" FOREIGN KEY (toloc) REFERENCES "public"."destinations" (id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 INSERT INTO "car_types" ("name", "price", "speed", "max_persons", "service_km", "service_price") VALUES ('ECO', 1, 15, 2, 1500, 300);

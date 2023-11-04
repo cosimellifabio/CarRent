@@ -6,6 +6,7 @@
 #include <QTextStream.h>
 #include <QTimer.h>
 #include <QDebug>
+#include <QMessageBox>
 
 //--------------------------------------------------------------------------------
 CarRentClientForm::CarRentClientForm(QWidget* parent)
@@ -17,9 +18,20 @@ CarRentClientForm::CarRentClientForm(QWidget* parent)
 	connect(ui.btnUserCreate, SIGNAL(clicked()), this, SLOT(createUser()));
 	connect(ui.btnUserDelete, SIGNAL(clicked()), this, SLOT(deleteUser()));
 	connect(ui.btnEditUser, SIGNAL(clicked()), this, SLOT(editUser()));
-	connect(ui.btnCarCreate, SIGNAL(clicked()), this, SLOT(createCar()));
-	connect(ui.btnCarDelete, SIGNAL(clicked()), this, SLOT(deleteCar()));
-	connect(ui.btnCarUser, SIGNAL(clicked()), this, SLOT(editCar()));
+	connect(ui.btnLogin, SIGNAL(clicked()), this, SLOT(loginUser()));
+
+
+	connect(ui.btnTripBuy, SIGNAL(clicked()), this, SLOT(buyTrip()));
+	connect(ui.btnTripLoad, SIGNAL(clicked()), this, SLOT(loadTrip()));
+	//connect(ui.btnTrip, SIGNAL(clicked()), this, SLOT(editCar()));
+
+	ui.cmbPassengers->addItem("1");
+	ui.cmbPassengers->addItem("2");
+	ui.cmbPassengers->addItem("3");
+	ui.cmbPassengers->addItem("4");
+	ui.cmbPassengers->addItem("5");
+	ui.cmbPassengers->addItem("6");
+	ui.cmbPassengers->addItem("7");
 
 	// db init
 	QString connName;
@@ -29,16 +41,20 @@ CarRentClientForm::CarRentClientForm(QWidget* parent)
 		"pgpw",
 		"carrent",
 		"CarRentClient");
-	m_userModel = new UserModel(this, m_db, ui.tblUsers);
-	m_userModel->init();
-	connect(ui.tblUsers->selectionModel(), SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)), this, SLOT(setUser(const QItemSelection&, const QItemSelection&)));
 
+	m_userModel = new UserModel(this, m_db, NULL);
+	m_userModel->init();
 	refreshUser();
+
 	m_carModel = new CarModel(this, m_db, ui.tblCars);
 	m_carModel->init();
 	connect(ui.tblCars->selectionModel(), SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)), this, SLOT(setCar(const QItemSelection&, const QItemSelection&)));
-
 	refreshCar();
+
+	m_locModel = new LocationsModel(this, m_db, NULL);
+	m_locModel->init();
+	m_locModel->getList(m_db, ui.cmbFrom);
+	m_locModel->getList(m_db, ui.cmbTo);
 }
 //--------------------------------------------------------------------------------
 
@@ -132,6 +148,29 @@ void CarRentClientForm::editUser() {
 }
 //--------------------------------------------------------------------------------
 
+void CarRentClientForm::loginUser() {
+
+	int id;
+	QString address, credit, driving;
+	if (m_userModel->getLogin(m_db, ui.nedUserName->text(), ui.nedUserSurname->text(), id, address, credit, driving)) {
+		ui.nedUserAddress->setText(address);
+		ui.nedUserCredtCard->setText(credit);
+		ui.nedUserDrivingLic->setText(driving);
+		ui.nedUserId->setText(QString::number(id));
+	}
+	else
+	{
+		QMessageBox msgBox;
+		msgBox.setText("User not Found, set name and surname");
+		//msgBox.setInformativeText("Do you want to save your changes?");
+		//msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+		//msgBox.setDefaultButton(QMessageBox::Save);
+		int ret = msgBox.exec();
+	}
+	refreshUser();
+}
+//--------------------------------------------------------------------------------
+
 void CarRentClientForm::refreshUser() {
 	m_userModel->sort(0, Qt::SortOrder::AscendingOrder);
 	m_userModel->select();
@@ -142,11 +181,11 @@ void CarRentClientForm::refreshUser() {
 //--------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 
-void CarRentClientForm::createCar() {
+/*void CarRentClientForm::createCar() {
 
-	m_carModel->create(m_db, ui.nedCarName->text(), ui.nedCarBrand->text(), ui.nedCarTail->text(), ui.nedCarClass->text());
+	//m_carModel->create(m_db, ui.nedCarName->text(), ui.nedCarBrand->text(), ui.nedCarTail->text(), ui.nedCarClass->text());
 	refreshCar();
-}
+}*/
 //--------------------------------------------------------------------------------
 
 void CarRentClientForm::setCar(const QItemSelection& selected, const QItemSelection& deselected)
@@ -159,27 +198,22 @@ void CarRentClientForm::setCar(const QItemSelection& selected, const QItemSelect
 	QString name, surname, address, credit;
 	if (m_carModel->getCar(m_db, l, id, name, surname, address, credit)) {
 		ui.nedCarName->setText(name);
-		ui.nedCarBrand->setText(surname);
-		ui.nedCarTail->setText(address);
-		ui.nedCarClass->setText(credit);
-		ui.nedCarId->setText(QString::number(id));
+//		ui.nedCarId->setText(QString::number(id));
 	}
 
 }
 //--------------------------------------------------------------------------------
 
-void CarRentClientForm::deleteCar() {
+void CarRentClientForm::loadTrip() {
 
-
-	m_carModel->deleteCar(m_db, ui.nedCarId->text().toInt());
+	//m_carModel->deleteCar(m_db, ui.nedCarId->text().toInt());
 	refreshCar();
 }
 //--------------------------------------------------------------------------------
 
-void CarRentClientForm::editCar() {
+void CarRentClientForm::buyTrip() {
 
-
-	m_carModel->edit(m_db, ui.nedCarId->text().toInt(), ui.nedCarName->text(), ui.nedCarBrand->text(), ui.nedCarTail->text(), ui.nedCarClass->text());
+	//m_carModel->edit(m_db, ui.nedCarId->text().toInt(), ui.nedCarName->text(), ui.nedCarBrand->text(), ui.nedCarTail->text(), ui.nedCarClass->text());
 	refreshCar();
 }
 //--------------------------------------------------------------------------------
