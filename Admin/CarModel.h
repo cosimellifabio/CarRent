@@ -15,8 +15,8 @@ public:
     bool edit(QSqlDatabase db, int id, const QString& name, const QString& brand, const QString& tail_number, const QString& class1);
 
     bool updateService(QSqlDatabase db, int id, int km_to_do);
-protected:
 	static const QString CarTableName;
+protected:
 
     QTableView* m_view;
 };

@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.16)
  SET (QT_dir ${OSGeo4W_dir}/apps/Qt5)
  SET (SOURCE_DIR_PATH .)
  SET (GENERAL_PATH ./libs)
+ SET (LIB_PATH .)
 #############################################################
 #############################################################
 project(CarRent LANGUAGES CXX)
@@ -50,10 +51,16 @@ SET (SRCS
 
      CarRent.h
      CarRent.cpp
-     UserModel.h
-     UserModel.cpp
-     CarModel.h
-     CarModel.cpp
+     ${LIB_PATH}/UserModel.h
+     ${LIB_PATH}/UserModel.cpp
+     ${LIB_PATH}/CarModel.h
+     ${LIB_PATH}/CarModel.cpp
+     ${LIB_PATH}/locationsModel.h
+     ${LIB_PATH}/locationsModel.cpp
+     ${LIB_PATH}/RentModel.h
+     ${LIB_PATH}/RentModel.cpp
+     ${LIB_PATH}/carTypesModel.h
+     ${LIB_PATH}/carTypesModel.cpp
      main.cpp
 
 #     ${GENERAL_PATH}/Base/Base_Base64.cpp 

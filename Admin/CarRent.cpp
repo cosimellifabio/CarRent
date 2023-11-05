@@ -6,7 +6,10 @@
 #include <QTextStream.h>
 #include <QTimer.h>
 #include <QDebug>
+#include <QFileDialog>
 
+#include <QSqlQuery.h>
+#include <QSqlRecord.h>
 //--------------------------------------------------------------------------------
 CarRentForm::CarRentForm(QWidget* parent)
 	: QWidget(parent)
@@ -20,6 +23,7 @@ CarRentForm::CarRentForm(QWidget* parent)
 	connect(ui.btnCarCreate, SIGNAL(clicked()), this, SLOT(createCar()));
 	connect(ui.btnCarDelete, SIGNAL(clicked()), this, SLOT(deleteCar()));
 	connect(ui.btnCarUser, SIGNAL(clicked()), this, SLOT(editCar()));
+	connect(ui.btnReport, SIGNAL(clicked()), this, SLOT(report()));
 
 	// db init
 	QString connName;
@@ -38,13 +42,30 @@ CarRentForm::CarRentForm(QWidget* parent)
 	m_carModel->init();
 	connect(ui.tblCars->selectionModel(), SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)), this, SLOT(setCar(const QItemSelection&, const QItemSelection&)));
 
-	refreshCar();
+	m_carTypesModel = new CarTypesModel(this, m_db, NULL);
+	m_carTypesModel->init();
+
+	m_locModel = new LocationsModel(this, m_db, NULL);
+	m_locModel->init();
+
+	m_rentModel = new RentModel(this, m_db, ui.tableRents);
+	m_rentModel->init();
+	refreshAll();
 }
 //--------------------------------------------------------------------------------
 
 void CarRentForm::refreshAll() {
 	refreshUser();
 	refreshCar();
+	refreshRent();
+}
+//--------------------------------------------------------------------------------
+
+void CarRentForm::refreshRent() {
+
+	m_rentModel->sort(12, Qt::SortOrder::AscendingOrder);
+	m_rentModel->select();
+	m_rentModel->show();
 }
 //--------------------------------------------------------------------------------
 
@@ -155,9 +176,9 @@ void CarRentForm::setCar(const QItemSelection& selected, const QItemSelection& d
 		return;
 	auto  l = selected.at(0).topLeft();
 
-	int id;
+	int id, ns;
 	QString name, surname, address, credit;
-	if (m_carModel->getCar(m_db, l, id, name, surname, address, credit)) {
+	if (m_carModel->getCar(m_db, l, id, name, surname, address, credit, ns)) {
 		ui.nedCarName->setText(name);
 		ui.nedCarBrand->setText(surname);
 		ui.nedCarTail->setText(address);
@@ -188,5 +209,99 @@ void CarRentForm::refreshCar() {
 	m_carModel->sort(0, Qt::SortOrder::AscendingOrder);
 	m_carModel->select();
 	m_carModel->show();
+}
+//--------------------------------------------------------------------------------
+void CarRentForm::report() {
+	QString filename = QFileDialog::getSaveFileName(this, "Save report file", "", ".txt");
+	QFile f(filename);
+	if (f.open(QIODevice::WriteOnly))
+	{
+		QTextStream outStream(&f);
+		QSqlQuery query(m_db);
+
+		QString q = QString("SELECT public.cars.id,public.cars.name,public.cars.brand, public.cars.tail_number,public.cars.class,next_service_km, ");
+		q += QString(" (SELECT count(*) FROM public.rents WHERE (userid = 1) AND (public.rents.car =  public.cars.id) AND (public.rents.date_from < now())) as ser_done, ");
+		q += QString(" (SELECT public.rents.date_from FROM public.rents WHERE (userid = 1) AND (public.rents.car =  public.cars.id) AND (public.rents.date_from >= now())) as ser_to_to, ");
+		q += QString(" (SELECT sum(km) FROM public.rents WHERE (public.rents.car =  public.cars.id) AND (public.rents.date_from < now())) as km_done, ");
+		q += QString(" (SELECT sum(km) FROM public.rents WHERE (public.rents.car =  public.cars.id) AND (public.rents.date_from >= now())) as km_to_do, ");
+		q += QString(" (SELECT sum(price) FROM public.rents WHERE (public.rents.car =  public.cars.id) AND (public.rents.date_from < now())) as p_done, ");
+		q += QString(" (SELECT sum(price) FROM public.rents WHERE (public.rents.car =  public.cars.id) AND (public.rents.date_from >= now())) as p_to_do ");
+		q += QString(" from %1  ORDER BY id ").arg(m_carModel->CarTableName);
+		query.prepare(q);
+
+		if (query.exec()) {
+
+			while (query.next()) {
+				QSqlRecord reci = query.record();
+
+				int id = reci.value(0).toInt();
+				outStream << "\n\nCAR ID: " << reci.value(0).toString() << endl;
+				outStream << "CAR Name: " << reci.value(1).toString() << endl;
+				outStream << "\tCAR Brand: " << reci.value(2).toString() << endl;
+				outStream << "\tCAR Tail: " << reci.value(3).toString() << endl;
+
+				QString class1 = reci.value(4).toString();
+				int pricekm, speed, max_persons, service_km, service_price;
+				m_carTypesModel->selectType(m_db, class1, pricekm, speed, max_persons, service_km, service_price);
+
+				outStream << "\tCAR Class: " << class1 << endl;
+				outStream << "\tCAR Next Service At KM : " << reci.value(5).toString() << endl;
+				outStream << "\t\tCAR Next Service In Minimum Hours : " << (int)((double)reci.value(5).toInt() / (double)speed + 0.5) << endl;
+				outStream << "\t\tCAR Service Done : " << reci.value(6).toString() << endl;
+				outStream << "\t\tCAR Next Service : " << reci.value(7).toString() << endl;
+				outStream << "\tCAR KM done: " << reci.value(8).toString() << endl;
+				outStream << "\t\tCAR KM to do: " << reci.value(9).toString() << endl;
+				outStream << "\tCAR Money done: " << reci.value(10).toString() << endl;
+				outStream << "\t\tCAR Money to do: " << reci.value(11).toString() << endl;
+
+				QSqlQuery query2(m_db);
+
+				QString q2 = QString("SELECT name, fromloc, from_angle, toloc, to_angle, passengers, (EXTRACT(EPOCH FROM ( NOW() - date_from)) * 100.)/ EXTRACT(EPOCH FROM ( date_to - date_from)) as dif FROM public.rents  ");
+				q2 += QString(" WHERE (public.rents.car =  %1) AND (public.rents.date_from < now()) AND (public.rents.date_to > now()) ").arg(id);
+				query2.prepare(q2);
+
+				if (query2.exec()) {
+					if (query2.next()) {
+						QSqlRecord reci2 = query2.record();
+						outStream << "\tCAR IS IN RENT NOW " << endl;
+						outStream << "\t\tTRIP Name: " << reci2.value(0).toString() << endl;
+						outStream << "\t\tTRIP Loc From: " << reci2.value(1).toString() << endl;
+						outStream << "\t\tTRIP Loc From Angle: " << reci2.value(2).toString() << endl;
+						outStream << "\t\tTRIP Loc To: " << reci2.value(3).toString() << endl;
+						outStream << "\t\tTRIP Loc To Angle: " << reci2.value(4).toString() << endl;
+						outStream << "\t\tTRIP Passengers: " << reci2.value(5).toString() << endl;
+						outStream << "\t\tTRIP Loc IS At: " << reci2.value(6).toInt() << "% of entire trip" << endl;
+					}
+					else {
+						outStream << "\tCAR IS FREE NOW " << endl;
+
+					}
+				}
+
+				outStream << "\tCAR NEXT PROGRAMMED TRIP: " << endl;
+				QSqlQuery query3(m_db);
+
+				q2 = QString("SELECT name, fromloc, from_angle, toloc, to_angle, passengers, date_from, date_to FROM public.rents  ");
+				q2 += QString(" WHERE (public.rents.car =  %1) AND (public.rents.date_from > now()) ORDER BY date_from").arg(id);
+				query3.prepare(q2);
+
+				if (query3.exec()) {
+					while (query3.next()) {
+						QSqlRecord reci3 = query3.record();
+						outStream << "\n\t\tTRIP Name: " << reci3.value(0).toString() << endl;
+						outStream << "\t\tTRIP Date From: " << reci3.value(6).toString() << endl;
+						outStream << "\t\tTRIP Date To: " << reci3.value(7).toString() << endl;
+						outStream << "\t\tTRIP Loc From: " << reci3.value(1).toString() << endl;
+						outStream << "\t\tTRIP Loc From Angle: " << reci3.value(2).toString() << endl;
+						outStream << "\t\tTRIP Loc To: " << reci3.value(3).toString() << endl;
+						outStream << "\t\tTRIP Loc To Angle: " << reci3.value(4).toString() << endl;
+						outStream << "\t\tTRIP Passengers: " << reci3.value(5).toString() << endl;
+					}
+				}
+			}
+		}
+
+		f.close();
+	}
 }
 //--------------------------------------------------------------------------------

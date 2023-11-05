@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1296</width>
-    <height>873</height>
+    <height>905</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -46,6 +46,18 @@
          </property>
          <item>
           <widget class="QGroupBox" name="groupBox_6">
+           <property name="minimumSize">
+            <size>
+             <width>1000</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>16777215</height>
+            </size>
+           </property>
            <property name="title">
             <string/>
            </property>
@@ -70,6 +82,12 @@
               <layout class="QHBoxLayout" name="horizontalLayout_6">
                <item>
                 <widget class="QTableView" name="tblUsers">
+                 <property name="minimumSize">
+                  <size>
+                   <width>400</width>
+                   <height>0</height>
+                  </size>
+                 </property>
                  <property name="maximumSize">
                   <size>
                    <width>16777215</width>
@@ -254,7 +272,14 @@
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_5">
                <item>
-                <widget class="QTableView" name="tblCars"/>
+                <widget class="QTableView" name="tblCars">
+                 <property name="minimumSize">
+                  <size>
+                   <width>400</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                </widget>
                </item>
                <item>
                 <widget class="QGroupBox" name="groupBox_11">
@@ -417,7 +442,7 @@
           <widget class="QGroupBox" name="groupBox_7">
            <property name="maximumSize">
             <size>
-             <width>450</width>
+             <width>16777215</width>
              <height>16777215</height>
             </size>
            </property>
@@ -462,6 +487,13 @@
            </property>
            <property name="text">
             <string>Refresh</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnReport">
+           <property name="text">
+            <string>PRINT REPORT</string>
            </property>
           </widget>
          </item>
