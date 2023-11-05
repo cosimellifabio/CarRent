@@ -39,7 +39,7 @@ bool CarModel::create(QSqlDatabase db, const QString& name, const QString& brand
     return query.exec();
 }
 //--------------------------------------------------------------------------------
-bool CarModel::selectCar(QSqlDatabase db, int id, QString& name, QString& brand, QString& tail_number, QString& class1)
+bool CarModel::selectCar(QSqlDatabase db, int id, QString& name, QString& brand, QString& tail_number, QString& class1, int& next_service_km)
 {
     QSqlQuery query(db);
 
@@ -57,6 +57,7 @@ bool CarModel::selectCar(QSqlDatabase db, int id, QString& name, QString& brand,
         brand = reci.value(2).toString();
         tail_number = reci.value(3).toString();
         class1 = reci.value(4).toString();
+        next_service_km = reci.value(5).toInt();
 
         qDebug() << id << name << "\n";
           
@@ -65,10 +66,10 @@ bool CarModel::selectCar(QSqlDatabase db, int id, QString& name, QString& brand,
     return false;
 }
 //--------------------------------------------------------------------------------
-bool CarModel::getCar(QSqlDatabase db, const QModelIndex& i, int& id, QString& name, QString& brand, QString& tail_number, QString& class1)
+bool CarModel::getCar(QSqlDatabase db, const QModelIndex& i, int& id, QString& name, QString& brand, QString& tail_number, QString& class1, int& next_service_km)
 {
     id = this->data(i).toInt();
-    return selectCar(db, id, name, brand, tail_number, class1);
+    return selectCar(db, id, name, brand, tail_number, class1, next_service_km);
 }
 //--------------------------------------------------------------------------------
 bool CarModel::edit(QSqlDatabase db, int id, const QString& name, const QString& brand, const QString& tail_number, const QString& class1)
@@ -87,7 +88,6 @@ bool CarModel::edit(QSqlDatabase db, int id, const QString& name, const QString&
     if (query.exec()) {
 
         query.next();
-        QSqlRecord reci = query.record();
         qDebug() << id << name << "\n";
 
         return true;
@@ -112,3 +112,21 @@ bool CarModel::deleteCar(QSqlDatabase db, int id)
 }
 //--------------------------------------------------------------------------------
 
+bool CarModel::updateService(QSqlDatabase db, int id, int next_service_km)
+{
+    QSqlQuery query(db);
+
+    QString q = QString("UPDATE %1 SET next_service_km=:next_service_km, updatedAt=now() WHERE id = :id ").arg(CarTableName);
+
+    query.prepare(q);
+    query.bindValue(":id", id);
+    query.bindValue(":next_service_km", next_service_km);
+    if (query.exec()) {
+
+        query.next();
+        return true;
+    }
+    return false;
+}
+
+//--------------------------------------------------------------------------------

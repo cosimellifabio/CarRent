@@ -1,12 +1,12 @@
-#include "LocationsModel.h"
+#include "CarTypesModel.h"
 #include <QSqlQuery.h>
 #include <QSqlRecord.h>
 #include <QDebug.h>
 
-const QString LocationsModel::locTableName = "destinations";
+const QString CarTypesModel::locTableName = "car_types";
 
 //--------------------------------------------------------------------------------
-void LocationsModel::init() {
+void CarTypesModel::init() {
     this->setTable(locTableName);
     this->setEditStrategy(QSqlTableModel::OnManualSubmit);
     if (m_view) {
@@ -17,7 +17,7 @@ void LocationsModel::init() {
 
 };
 //--------------------------------------------------------------------------------
-bool LocationsModel::getList(QSqlDatabase db, QComboBox* cmb)
+bool CarTypesModel::getList(QSqlDatabase db, QComboBox* cmb)
 {
     QSqlQuery query(db);
     QString q = QString("SELECT public.destinations.name from %1  ").arg(locTableName);
@@ -35,34 +35,7 @@ bool LocationsModel::getList(QSqlDatabase db, QComboBox* cmb)
     return false;
 }
 //--------------------------------------------------------------------------------
-bool LocationsModel::selectLocation(QSqlDatabase db, int id, QString& name, int& before, int& after, int& hops, int& price)
-{
-    QSqlQuery query(db);
-
-    QString q = QString("SELECT * from %1  WHERE id = :id ").arg(locTableName);
-
-    query.prepare(q);
-    query.bindValue(":id", id);
-
-    if (query.exec()) {
-
-        query.next();
-        QSqlRecord reci = query.record();
-
-        name = reci.value(1).toString();
-        before = reci.value(2).toInt();
-        after = reci.value(3).toInt();
-        hops = reci.value(4).toInt();
-        price = reci.value(5).toInt();
-
-        qDebug() << id << name << "\n";
-
-        return true;
-    }
-    return false;
-}
-//--------------------------------------------------------------------------------
-bool LocationsModel::selectLocation(QSqlDatabase db, const QString& name, int& id, int& before, int& after, int& hops, int& price)
+bool CarTypesModel::selectType(QSqlDatabase db, const QString& name, int& price, int& speed, int& max_persons, int& service_km, int& service_price)
 {
     QSqlQuery query(db);
 
@@ -76,13 +49,13 @@ bool LocationsModel::selectLocation(QSqlDatabase db, const QString& name, int& i
         query.next();
         QSqlRecord reci = query.record();
 
-        id = reci.value(0).toInt();
-        before = reci.value(2).toInt();
-        after = reci.value(3).toInt();
-        hops = reci.value(4).toInt();
-        price = reci.value(5).toInt();
+        price = reci.value(1).toInt();
+        speed = reci.value(2).toInt();
+        max_persons = reci.value(3).toInt();
+        service_km = reci.value(4).toInt();
+        service_price = reci.value(5).toInt();
 
-        qDebug() << id << name << "\n";
+        qDebug() << name << price << "\n";
 
         return true;
     }

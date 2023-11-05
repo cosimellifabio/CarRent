@@ -7,6 +7,22 @@
 #include <QTimer.h>
 #include <QDebug>
 #include <QMessageBox>
+#include <QSqlRecord>
+#include <QComboBox>
+#include <QSpinBox>
+
+double minAngle(int from, int to) {
+	int r = abs(from - to);
+	if (360 - r < r)
+		r = 360 - r;
+	return r;
+}
+
+double arc(int from, int to, int radius) {
+	return ((double)minAngle(from, to)) * radius * M_PI / 360.;
+}
+
+
 
 //--------------------------------------------------------------------------------
 CarRentClientForm::CarRentClientForm(QWidget* parent)
@@ -20,9 +36,8 @@ CarRentClientForm::CarRentClientForm(QWidget* parent)
 	connect(ui.btnEditUser, SIGNAL(clicked()), this, SLOT(editUser()));
 	connect(ui.btnLogin, SIGNAL(clicked()), this, SLOT(loginUser()));
 
-
 	connect(ui.btnTripBuy, SIGNAL(clicked()), this, SLOT(buyTrip()));
-	connect(ui.btnTripLoad, SIGNAL(clicked()), this, SLOT(loadTrip()));
+	//connect(ui.btnTripLoad, SIGNAL(clicked()), this, SLOT(loadTrip()));
 	//connect(ui.btnTrip, SIGNAL(clicked()), this, SLOT(editCar()));
 
 	ui.cmbPassengers->addItem("1");
@@ -32,6 +47,9 @@ CarRentClientForm::CarRentClientForm(QWidget* parent)
 	ui.cmbPassengers->addItem("5");
 	ui.cmbPassengers->addItem("6");
 	ui.cmbPassengers->addItem("7");
+
+	ui.dateFrom->setMinimumDateTime(QDateTime::currentDateTime());
+	ui.dateTo->setMinimumDateTime(QDateTime::currentDateTime());
 
 	// db init
 	QString connName;
@@ -46,6 +64,9 @@ CarRentClientForm::CarRentClientForm(QWidget* parent)
 	m_userModel->init();
 	refreshUser();
 
+	m_carTypesModel = new CarTypesModel(this, m_db, NULL);
+	m_carTypesModel->init();
+
 	m_carModel = new CarModel(this, m_db, ui.tblCars);
 	m_carModel->init();
 	connect(ui.tblCars->selectionModel(), SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)), this, SLOT(setCar(const QItemSelection&, const QItemSelection&)));
@@ -55,12 +76,24 @@ CarRentClientForm::CarRentClientForm(QWidget* parent)
 	m_locModel->init();
 	m_locModel->getList(m_db, ui.cmbFrom);
 	m_locModel->getList(m_db, ui.cmbTo);
+
+	m_rentModel = new RentModel(this, m_db, ui.tableRents);
+	m_rentModel->init();
+	//connect(ui.tableRents->selectionModel(), SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)), this, SLOT(setRent(const QItemSelection&, const QItemSelection&)));
+
+	connect(ui.dateFrom, &QDateTimeEdit::dateTimeChanged, this, &CarRentClientForm::dateTimeRentChanged);
+	//connect(ui.dateTo, &QDateTimeEdit::dateTimeChanged, this, &CarRentClientForm::dateTimeRentChanged);
+	connect(ui.cmbFrom, SIGNAL(currentIndexChanged(const QString&)), this, SLOT(cmbChanged(const QString&)));
+	connect(ui.cmbTo, SIGNAL(currentIndexChanged(const QString&)), this, SLOT(cmbChanged(const QString&)));
+	connect(ui.sbxFrom, SIGNAL(valueChanged(const QString&)), this, SLOT(cmbChanged(const QString&)));
+	connect(ui.sbxTo, SIGNAL(valueChanged(const QString&)), this, SLOT(cmbChanged(const QString&)));
 }
 //--------------------------------------------------------------------------------
 
 void CarRentClientForm::refreshAll() {
 	refreshUser();
 	refreshCar();
+	refreshRent();
 }
 //--------------------------------------------------------------------------------
 
@@ -157,6 +190,22 @@ void CarRentClientForm::loginUser() {
 		ui.nedUserCredtCard->setText(credit);
 		ui.nedUserDrivingLic->setText(driving);
 		ui.nedUserId->setText(QString::number(id));
+
+		refreshRent();
+
+		int carid;
+		if (m_userModel->getPreferredCar(m_db, id, carid) && carid) {
+			for (size_t i = 0; i < m_carModel->rowCount(); i++)
+			{
+				int idc = m_carModel->record(i).value("id").toInt();
+
+				if (idc == carid) {
+					ui.tblCars->selectRow(i);
+					//m_carModel->selectRow(i);
+				}
+
+			}
+		}
 	}
 	else
 	{
@@ -194,11 +243,15 @@ void CarRentClientForm::setCar(const QItemSelection& selected, const QItemSelect
 		return;
 	auto  l = selected.at(0).topLeft();
 
-	int id;
-	QString name, surname, address, credit;
-	if (m_carModel->getCar(m_db, l, id, name, surname, address, credit)) {
+	int id, next_service_km;
+	QString name, brand, tail_number, class1;
+	if (m_carModel->getCar(m_db, l, m_carSelected, name, brand, tail_number, class1, next_service_km)) {
 		ui.nedCarName->setText(name);
-//		ui.nedCarId->setText(QString::number(id));
+		//		ui.nedCarId->setText(QString::number(id));
+
+		int price = 1;
+		int km = 5, seconds = 0;
+		calculateTrip(km, price, seconds); // to calculate time to
 	}
 
 }
@@ -213,8 +266,103 @@ void CarRentClientForm::loadTrip() {
 
 void CarRentClientForm::buyTrip() {
 
-	//m_carModel->edit(m_db, ui.nedCarId->text().toInt(), ui.nedCarName->text(), ui.nedCarBrand->text(), ui.nedCarTail->text(), ui.nedCarClass->text());
-	refreshCar();
+	QStringList ids;
+	if (m_rentModel->checkCarUsed(m_db, ui.dateFrom->dateTime(), ui.dateTo->dateTime(), ids) && ids.size() && (ids.indexOf(QString::number(m_carSelected)) >= 0)) {
+		QMessageBox msgBox;
+		msgBox.setText("Car Not avaliable!");
+		//msgBox.setInformativeText("Do you want to save your changes?");
+		//msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+		//msgBox.setDefaultButton(QMessageBox::Save);
+		int ret = msgBox.exec();
+		return;
+	}
+
+	QString name, brand, tail_number, class1;
+	int next_service_km;
+	if (!m_carModel->selectCar(m_db, m_carSelected, name, brand, tail_number, class1, next_service_km)) {
+		QMessageBox msgBox;
+		msgBox.setText("Select a car!");
+		//msgBox.setInformativeText("Do you want to save your changes?");
+		//msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+		//msgBox.setDefaultButton(QMessageBox::Save);
+		int ret = msgBox.exec();
+		return;
+	}
+	int pricekm, speed, max_persons, service_km, service_price;
+	m_carTypesModel->selectType(m_db, class1, pricekm, speed, max_persons, service_km, service_price);
+	if (ui.cmbPassengers->currentText().toInt() > max_persons) {
+		QMessageBox msgBox;
+		msgBox.setText("Too much passengers, Select another car!");
+		//msgBox.setInformativeText("Do you want to save your changes?");
+		//msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+		//msgBox.setDefaultButton(QMessageBox::Save);
+		int ret = msgBox.exec();
+		return;
+	}
+
+	int idFrom, beforeFrom, afterFrom, hopsFrom, priceFrom;
+	m_locModel->selectLocation(m_db, ui.cmbFrom->currentText(), idFrom, beforeFrom, afterFrom, hopsFrom, priceFrom);
+	int idTo, beforeTo, afterTo, hopsTo, priceTo;
+	m_locModel->selectLocation(m_db, ui.cmbTo->currentText(), idTo, beforeTo, afterTo, hopsTo, priceTo);
+
+	int price = 1;
+	int km = 5, seconds = 0;
+	calculateTrip(km, price,  seconds);
+	
+	QMessageBox msgBox;
+	msgBox.setText("The price is " + QString::number(price) + " do you want to proceed with the payment? \n If you say YES the payment will be done");
+	//msgBox.setInformativeText("Do you want to save your changes?");
+	msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Discard);
+	msgBox.setDefaultButton(QMessageBox::Discard);
+	int ret = msgBox.exec();
+	if (ret == QMessageBox::Yes) {
+
+		m_rentModel->create(m_db, ui.nedTripName->text(), ui.nedUserId->text().toInt(), m_carSelected,
+			idFrom, idTo, ui.sbxFrom->value(), ui.sbxTo->value(), price, km, ui.cmbPassengers->currentText().toInt(), ui.dateFrom->dateTime(), ui.dateTo->dateTime());
+		
+		manageService(km);
+		refreshAll();
+		QMessageBox msgBox;
+		msgBox.setText("Transaction Done!");
+		//msgBox.setInformativeText("Do you want to save your changes?");
+		//msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+		//msgBox.setDefaultButton(QMessageBox::Save);
+		int ret = msgBox.exec();
+	}
+
+}
+//--------------------------------------------------------------------------------
+
+void CarRentClientForm::calculateTrip(int &km, int &price, int &seconds) {
+
+	km = price = seconds = 0;
+	
+	QString name, brand, tail_number, class1;
+	int next_service_km;
+	if (!m_carModel->selectCar(m_db, m_carSelected, name, brand, tail_number, class1, next_service_km)) {
+		return;
+	}
+	int pricekm, speed, max_persons, service_km, service_price;
+	m_carTypesModel->selectType(m_db, class1, pricekm, speed, max_persons, service_km, service_price);
+
+	int idFrom, beforeFrom, afterFrom, hopsFrom, priceFrom;
+	m_locModel->selectLocation(m_db, ui.cmbFrom->currentText(), idFrom, beforeFrom, afterFrom, hopsFrom, priceFrom);
+	int idTo, beforeTo, afterTo, hopsTo, priceTo;
+	m_locModel->selectLocation(m_db, ui.cmbTo->currentText(), idTo, beforeTo, afterTo, hopsTo, priceTo);
+
+	// from-to or to-from have the same price, calc min length
+	int n_jump = abs(idFrom - idTo);
+	int min_id = (idFrom);
+	if (min_id > idTo)
+		min_id = idTo;
+	if (idFrom == 1) // this is an exception
+		n_jump++;
+
+	km = (int)(arc(ui.sbxFrom->value(), ui.sbxTo->value(), min_id * 5) + n_jump * 5 + 5);
+	price = (int)((double)km / (double)pricekm + 0.5);
+	seconds = (int)((double)(km * 3600.) / (double)speed + 0.5);
+
+	ui.dateTo->setDateTime(ui.dateFrom->dateTime().addSecs(seconds));
 }
 //--------------------------------------------------------------------------------
 
@@ -224,3 +372,93 @@ void CarRentClientForm::refreshCar() {
 	m_carModel->show();
 }
 //--------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
+
+void CarRentClientForm::setRent(const QItemSelection& selected, const QItemSelection& deselected)
+{
+	if (!selected.size())
+		return;
+	auto  l = selected.at(0).topLeft();
+
+	int id;
+	/*QString name, surname, address, credit, driving;
+	if (m_userModel->getUser(m_db, l, id, name, surname, address, credit, driving)) {
+		ui.nedUserName->setText(name);
+		ui.nedUserSurname->setText(surname);
+		ui.nedUserAddress->setText(address);
+		ui.nedUserCredtCard->setText(credit);
+		ui.nedUserDrivingLic->setText(driving);
+		ui.nedUserId->setText(QString::number(id));
+	}*/
+}
+//--------------------------------------------------------------------------------
+
+void CarRentClientForm::refreshRent() {
+
+	if (ui.nedUserId->text().toInt()) {
+
+		m_rentModel->sort( 12, Qt::SortOrder::AscendingOrder);
+		m_rentModel->setFilter("userid=" + ui.nedUserId->text());
+		m_rentModel->select();
+		m_rentModel->show();
+	}
+}
+//--------------------------------------------------------------------------------
+void CarRentClientForm::refreshTimeTo() {
+
+	int price = 1;
+	int km = 5, seconds = 0;
+	calculateTrip(km, price, seconds); // to calculate time to
+}
+//--------------------------------------------------------------------------------
+void CarRentClientForm::dateTimeRentChanged(const QDateTime& datetime) {
+
+	m_carModel->sort(0, Qt::SortOrder::AscendingOrder);
+	QStringList ids;
+	if (m_rentModel->checkCarUsed(m_db, ui.dateFrom->dateTime(), ui.dateTo->dateTime(), ids) && ids.size()) {
+		m_carModel->setFilter("id NOT IN (" + ids.join(",") + ")");
+	}
+	else {
+		m_carModel->setFilter("");
+	}
+	m_carModel->select();
+	m_carModel->show();
+
+	refreshTimeTo();
+}
+//--------------------------------------------------------------------------------
+// QComboBox::currentIndexChanged(const QString &text)
+void CarRentClientForm::cmbChanged(const QString& text) {
+	refreshTimeTo();
+}
+//--------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
+
+void CarRentClientForm::manageService(int km) {
+
+	if (km) {
+		QString name, brand, tail_number, class1;
+		int next_service_km;
+		if (!m_carModel->selectCar(m_db, m_carSelected, name, brand, tail_number, class1, next_service_km)) {
+			return;
+		}
+		int pricekm, speed, max_persons, service_km, service_price;
+		m_carTypesModel->selectType(m_db, class1, pricekm, speed, max_persons, service_km, service_price);
+
+		if (next_service_km < km) {
+			next_service_km = service_km;
+			// add a service and the payment
+			QDateTime last;
+			m_rentModel->getLastDate(m_db, m_carSelected, last);
+			m_rentModel->create(m_db, "SERVICE FOR CAR " + name, 1, m_carSelected,
+				1, 1, 0, 0, -service_price, 0, 1, last, last.addDays(1));
+		}
+		else
+			next_service_km -= km;
+		m_carModel->updateService(m_db, m_carSelected, next_service_km);
+	}
+}

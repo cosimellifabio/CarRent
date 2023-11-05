@@ -39,7 +39,7 @@ CREATE TABLE public.cars (
     brand character varying(255),
     tail_number character varying(255),
 	"class" character varying(25),
-	is_free boolean default true,
+	next_service_km SMALLINT DEFAULT 1500,
     createdAt timestamp with time zone NOT NULL default now(),
     updatedAt timestamp with time zone NOT NULL default now(),
     CONSTRAINT cars_pkey PRIMARY KEY (id),
@@ -52,8 +52,8 @@ ALTER TABLE public.cars
 CREATE TABLE public.destinations (
     id bigserial,
     "name" character varying(255),
-    before bigint,
-    after bigint,
+    before smallint,
+    after smallint,
     hops integer,
     createdAt timestamp with time zone NOT NULL default now(),
     updatedAt timestamp with time zone NOT NULL default now(),
@@ -61,19 +61,23 @@ CREATE TABLE public.destinations (
 );
 
 CREATE TABLE public.rents (
-    id bigserial,
+   id bigserial,
 	name character varying(255),
-    userid bigint,
+   userid bigint,
 	car bigint,
-	fromloc bigint,
-	toloc bigint,
+	fromloc smallint,
+	toloc smallint,
+	from_angle integer DEFAULT 0,
+	to_angle integer DEFAULT 0,
+	price integer,
+	km integer,
 	passengers smallint,
-    date_from timestamp with time zone NOT NULL default now(),
-    date_to timestamp with time zone NOT NULL default now(),
+   date_from timestamp with time zone NOT NULL default now(),
+   date_to timestamp with time zone NOT NULL default now(),
 
-    createdAt timestamp with time zone NOT NULL default now(),
-    updatedAt timestamp with time zone NOT NULL default now(),
-    CONSTRAINT rents_pkey PRIMARY KEY (id),
+   createdAt timestamp with time zone NOT NULL default now(),
+   updatedAt timestamp with time zone NOT NULL default now(),
+   CONSTRAINT rents_pkey PRIMARY KEY (id),
 	CONSTRAINT "rents_user_fkey" FOREIGN KEY (userid) REFERENCES "public"."users" (id) ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT "rents_car_fkey" FOREIGN KEY (car) REFERENCES "public"."cars" (id) ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT "rents_from_fkey" FOREIGN KEY (fromloc) REFERENCES "public"."destinations" (id) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -85,10 +89,18 @@ INSERT INTO "car_types" ("name", "price", "speed", "max_persons", "service_km", 
 INSERT INTO "car_types" ("name", "price", "speed", "max_persons", "service_km", "service_price") VALUES ('DELUXE', 5, 50, 7, 1500, 300);
 
 INSERT INTO "destinations" ("id", "name", "before", "after", "hops") VALUES (1, 'Inner Circle', 0, 2, 1);
-INSERT INTO "destinations" ("id", "name", "before", "after", "hops") VALUES (2, 'Outer Circle', 3, 0, 1);
-INSERT INTO "destinations" ("id", "name", "before", "after", "hops") VALUES (3, 'Middle Circle', 1, 3, 1);
+INSERT INTO "destinations" ("id", "name", "before", "after", "hops") VALUES (3, 'Outer Circle', 3, 0, 1);
+INSERT INTO "destinations" ("id", "name", "before", "after", "hops") VALUES (2, 'Middle Circle', 1, 3, 1);
 
-INSERT INTO "users" ("id", "name", "surname", "address", "credit_card", "driving_license") VALUES (1, 'Fabio', 'Cosimelli', 'via Verdi', '111.111.111', 'AA1111');
+INSERT INTO "users" ("id", "name", "surname", "address", "credit_card", "driving_license") VALUES (1, 'ADMIN', 'Car Rent', 'Inner Circle - SimpleTown', '', '');
+INSERT INTO "users" ("id", "name", "surname", "address", "credit_card", "driving_license") VALUES (2, 'Fabio', 'Cosimelli', 'Middle Circle - SimpleTown', '111.111.111', 'AA1111');
 
-INSERT INTO "cars" ("id", "name", "brand", "tail_number", "class", "is_free") VALUES (1, 'Nuvolina', 'Dacia', 'XX111XX', 'ECO', 'true');
+INSERT INTO "cars" ("id", "name", "brand", "tail_number", "class") VALUES (1, 'Nuvolina', 'Dacia', 'XX111XX', 'ECO');
+INSERT INTO "cars" ("id", "name", "brand", "tail_number", "class") VALUES (2, 'Gigina', 'FIAT', 'GG111GG', 'MID-CLASS');
+INSERT INTO "cars" ("id", "name", "brand", "tail_number", "class") VALUES (3, 'Deluxe**', 'BMW', 'AA111AG', 'DELUXE');
+
+SELECT setval('public.users_id_seq', 10, TRUE);
+SELECT setval('public.cars_id_seq', 10, TRUE);
+SELECT setval('public.destinations_id_seq', 10, TRUE);
+SELECT setval('public.rents_id_seq', 10, true);
 

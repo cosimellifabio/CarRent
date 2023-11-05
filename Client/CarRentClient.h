@@ -13,6 +13,8 @@
 #include "UserModel.h"
 #include "CarModel.h"
 #include "LocationsModel.h"
+#include "carTypesModel.h"
+#include "RentModel.h"
 #include <QSqlDatabase.h>
 
 class CarRentClientForm : public QWidget
@@ -30,7 +32,9 @@ protected:
 		const QString& password,
 		const QString& dbName,
 		const QString& application_name);
-
+	void calculateTrip(int& km, int& price, int& seconds);
+	void refreshTimeTo();
+	void manageService(int km);
 private slots:
     void btnExitSlot();
 	void refreshUser();
@@ -41,10 +45,17 @@ private slots:
 	void setUser(const QItemSelection& selected, const QItemSelection& deselected);
 	
 	void refreshCar();
-	void buyTrip();
-	void loadTrip();
 	//void editCar();
 	void setCar(const QItemSelection& selected, const QItemSelection& deselected);
+
+	void buyTrip();
+	void loadTrip();
+	void refreshRent();
+	void setRent(const QItemSelection& selected, const QItemSelection& deselected);
+
+	void dateTimeRentChanged(const QDateTime& datetime);
+	void cmbChanged(const QString& text);
+
 	void refreshAll();
 private:
     Ui::CarRentClient ui;
@@ -54,6 +65,10 @@ private:
 	UserModel* m_userModel;
 	CarModel* m_carModel;
 	LocationsModel* m_locModel;
+	CarTypesModel* m_carTypesModel;
+	RentModel* m_rentModel;
+
+	int m_carSelected = 0;
 };
 //! [1]
 

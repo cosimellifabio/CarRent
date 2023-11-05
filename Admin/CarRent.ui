@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1296</width>
-    <height>910</height>
+    <height>873</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -426,7 +426,7 @@
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
-             <widget class="QTableWidget" name="tableRents"/>
+             <widget class="QTableView" name="tableRents"/>
             </item>
            </layout>
           </widget>

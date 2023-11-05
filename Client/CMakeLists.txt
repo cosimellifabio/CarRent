@@ -56,6 +56,10 @@ SET (SRCS
      ${LIB_PATH}/CarModel.cpp
      ${LIB_PATH}/locationsModel.h
      ${LIB_PATH}/locationsModel.cpp
+     ${LIB_PATH}/RentModel.h
+     ${LIB_PATH}/RentModel.cpp
+     ${LIB_PATH}/carTypesModel.h
+     ${LIB_PATH}/carTypesModel.cpp
      main.cpp
 
 #     ${GENERAL_PATH}/Base/Base_Base64.cpp 

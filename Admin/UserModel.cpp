@@ -144,4 +144,28 @@ bool UserModel::getLogin(QSqlDatabase db, const QString& name, const QString& su
     return false;
 }
 //--------------------------------------------------------------------------------
+bool UserModel::getPreferredCar(QSqlDatabase db, int id, int& carid)
+{
+    QSqlQuery query(db);
+
+    QString q = QString("SELECT car from rents  WHERE userid = :userid ORDER BY date_to desc LIMIT 1; ");
+
+    query.prepare(q);
+    query.bindValue(":userid", id);
+
+    if (query.exec()) {
+
+        if (query.next()) {
+            QSqlRecord reci = query.record();
+
+            carid = reci.value(0).toInt();
+
+            qDebug() << id << carid << "\n";
+            return true;
+        }
+    }
+    carid = 0;
+    return false;
+}
+//--------------------------------------------------------------------------------
 
