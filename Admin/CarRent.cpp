@@ -50,7 +50,22 @@ CarRentForm::CarRentForm(QWidget* parent)
 
 	m_rentModel = new RentModel(this, m_db, ui.tableRents);
 	m_rentModel->init();
+	connect(ui.tableRents->selectionModel(), SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)), this, SLOT(setRent(const QItemSelection&, const QItemSelection&)));
 	refreshAll();
+
+	m_scene = new QGraphicsScene(this);
+	ui.graphicsView->setScene(m_scene);
+
+	QPen outlinePen(Qt::white);
+	outlinePen.setWidth(2);
+
+	int w = ui.graphicsView ->width() - 50;
+	int step = w / 3;
+	int center = w / 2;
+	// addEllipse(x,y,w,h,pen,brush)
+	m_scene->addEllipse(0, 0, w, w, outlinePen, QBrush(Qt::red));
+	m_scene->addEllipse(step/2, step/2, w - step, w - step, outlinePen, QBrush(Qt::green));
+	m_scene->addEllipse(step, step, w - 2*step, w - 2*step, outlinePen, QBrush(Qt::red));
 }
 //--------------------------------------------------------------------------------
 
@@ -184,6 +199,77 @@ void CarRentForm::setCar(const QItemSelection& selected, const QItemSelection& d
 		ui.nedCarTail->setText(address);
 		ui.nedCarClass->setText(credit);
 		ui.nedCarId->setText(QString::number(id));
+	}
+
+}
+//--------------------------------------------------------------------------------
+
+void CarRentForm::setRent(const QItemSelection& selected, const QItemSelection& deselected)
+{
+	if (!selected.size())
+		return;
+	auto  l = selected.at(0).topLeft();
+
+	int id, fromloc, toloc, fromangle, toangle;
+	if (m_rentModel->getRent(m_db, l, id, fromloc, toloc, fromangle, toangle)) {
+
+		m_scene->clear();
+		QPen outlinePen(Qt::white);
+		outlinePen.setWidth(2);
+
+		int w = ui.graphicsView->width() - 50;
+		int step = w / 3;
+		int center = w / 2;
+		// addEllipse(x,y,w,h,pen,brush)
+		m_scene->addEllipse(0, 0, w, w, outlinePen, QBrush(Qt::red));
+		m_scene->addEllipse(step / 2, step / 2, w - step, w - step, outlinePen, QBrush(Qt::green));
+		m_scene->addEllipse(step, step, w - 2 * step, w - 2 * step, outlinePen, QBrush(Qt::red));
+
+		QPen outlinePen2(Qt::black);
+		outlinePen2.setWidth(4);
+
+		double rad = fromangle * M_PI / 180.;
+		m_scene->addEllipse(center + step * (fromloc)* cos(rad) / 2, center + step * (fromloc) * sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+
+		rad = toangle * M_PI / 180.;
+		m_scene->addEllipse(center + step * (toloc) * cos(rad) / 2, center + step * (toloc)* sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+
+		int arccircle = fromloc;
+		if (toloc < fromloc) {
+
+			arccircle = toloc;
+			rad = fromangle * M_PI / 180.;
+		}
+		else  {
+			rad =toangle * M_PI / 180.;
+		}
+		m_scene->addLine(center + step * (fromloc)*cos(rad) / 2, center + step * (fromloc)*sin(rad) / 2, center + step * (toloc)*cos(rad) / 2, center + step * (toloc)*sin(rad) / 2, outlinePen2);
+
+		if (toangle < fromangle) {
+			int s = fromangle;
+			fromangle = toangle;
+			toangle = s;
+		}
+
+		if (toangle - fromangle < 180)
+		{
+			for (double i = fromangle; i < toangle; ++i) {
+				rad = i * M_PI / 180.;
+				m_scene->addEllipse(center + step * (arccircle)*cos(rad) / 2, center + step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+			}
+		}
+		else
+		{
+			for (double i = 0; i < fromangle; ++i) {
+				rad = i * M_PI / 180.;
+				m_scene->addEllipse(center + step * (arccircle)*cos(rad) / 2, center + step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+			}
+			for (double i = toangle; i < 360; ++i) {
+				rad = i * M_PI / 180.;
+				m_scene->addEllipse(center + step * (arccircle)*cos(rad) / 2, center + step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+			}
+		}
+
 	}
 
 }

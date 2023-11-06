@@ -451,6 +451,22 @@
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
+             <widget class="QGraphicsView" name="graphicsView">
+              <property name="minimumSize">
+               <size>
+                <width>300</width>
+                <height>300</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>300</width>
+                <height>300</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QTableView" name="tableRents"/>
             </item>
            </layout>

@@ -17,6 +17,10 @@
 #include "RentModel.h"
 #include <QSqlDatabase.h>
 
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QGraphicsItem>
+
 class CarRentForm : public QWidget
 {
     Q_OBJECT
@@ -47,6 +51,7 @@ private slots:
 	void editCar();
 	void setCar(const QItemSelection& selected, const QItemSelection& deselected);
 	void refreshAll();
+	void setRent(const QItemSelection& selected, const QItemSelection& deselected);
 
 	void report();
 private:
@@ -61,6 +66,8 @@ private:
 	RentModel* m_rentModel;
 
 	int m_carSelected = 0;
+
+	QGraphicsScene* m_scene;
 };
 //! [1]
 

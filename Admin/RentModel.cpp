@@ -50,7 +50,7 @@ bool RentModel::create(QSqlDatabase db, const QString& name, int userid, int car
     return query.exec();
 }
 //--------------------------------------------------------------------------------
-bool RentModel::selectRent(QSqlDatabase db, int id, QString& name, QString& brand, QString& tail_number, QString& class1)
+bool RentModel::selectRent(QSqlDatabase db, int id, int& fromloc, int& toloc, int& fromangle, int& toangle)
 {
     QSqlQuery query(db);
 
@@ -64,22 +64,22 @@ bool RentModel::selectRent(QSqlDatabase db, int id, QString& name, QString& bran
         query.next();
         QSqlRecord reci = query.record();
 
-        name = reci.value(1).toString();
-        brand = reci.value(2).toString();
-        tail_number = reci.value(3).toString();
-        class1 = reci.value(4).toString();
+        fromloc = reci.value(4).toInt();
+        toloc = reci.value(5).toInt();
+        fromangle = reci.value(6).toInt();
+        toangle = reci.value(7).toInt();
 
-        qDebug() << id << name << "\n";
+       // qDebug() << id << name << "\n";
 
         return true;
     }
     return false;
 }
 //--------------------------------------------------------------------------------
-bool RentModel::getRent(QSqlDatabase db, const QModelIndex& i, int& id, QString& name, QString& brand, QString& tail_number, QString& class1)
+bool RentModel::getRent(QSqlDatabase db, const QModelIndex& i, int& id, int& fromloc, int& toloc, int& fromangle, int& toangle)
 {
     id = this->data(i).toInt();
-    return selectRent(db, id, name, brand, tail_number, class1);
+    return selectRent(db, id,  fromloc, toloc, fromangle, toangle);
 }
 //--------------------------------------------------------------------------------
 bool RentModel::edit(QSqlDatabase db, int id, const QString& name, const QString& brand, const QString& tail_number, const QString& class1)
