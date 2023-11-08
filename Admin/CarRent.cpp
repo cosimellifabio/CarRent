@@ -226,7 +226,7 @@ void CarRentForm::setCar(const QItemSelection& selected, const QItemSelection& d
 
 				int perc = reci2.value(6).toInt();
 				int kmArc = m_rentModel->getRentArcLength(fromloc, toloc, fromangle, toangle);
-				int kmLine = m_rentModel->getRentLineLength(fromloc, toloc, fromangle, toangle);//   (int)(arc(ui.sbxFrom->value(), ui.sbxTo->value(), min_id * 5) + n_jump * 5 + 5);
+				int kmLine = m_rentModel->getRentLineLength(fromloc, toloc, fromangle, toangle);
 
 				double distDone = (kmArc + kmLine) * perc / 100;
 				bool isonarc = false;
@@ -344,10 +344,10 @@ void CarRentForm::drawRent(int fromloc, int toloc, int fromangle, int toangle)
 	outlinePen2.setWidth(4);
 
 	double rad = fromangle * M_PI / 180.;
-	m_scene->addEllipse(center + step * (fromloc)*cos(rad) / 2, center + step * (fromloc)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+	m_scene->addEllipse(center + (double)step * (fromloc)*cos(rad) / 2, center + (double)step * (fromloc)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
 
 	rad = toangle * M_PI / 180.;
-	m_scene->addEllipse(center + step * (toloc)*cos(rad) / 2, center + step * (toloc)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+	m_scene->addEllipse(center + (double)step * (toloc)*cos(rad) / 2, center + (double)step * (toloc)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
 
 	int arccircle = fromloc;
 	if (toloc < fromloc) {
@@ -358,7 +358,7 @@ void CarRentForm::drawRent(int fromloc, int toloc, int fromangle, int toangle)
 	else {
 		rad = toangle * M_PI / 180.;
 	}
-	m_scene->addLine(center + step * (fromloc)*cos(rad) / 2, center + step * (fromloc)*sin(rad) / 2, center + step * (toloc)*cos(rad) / 2, center + step * (toloc)*sin(rad) / 2, outlinePen2);
+	m_scene->addLine(center + (double)step * (fromloc)*cos(rad) / 2, center + (double)step * (fromloc)*sin(rad) / 2, center + (double)step * (toloc)*cos(rad) / 2, center + (double)step * (toloc)*sin(rad) / 2, outlinePen2);
 
 	if (toangle < fromangle) {
 		int s = fromangle;
@@ -370,18 +370,18 @@ void CarRentForm::drawRent(int fromloc, int toloc, int fromangle, int toangle)
 	{
 		for (double i = fromangle; i < toangle; ++i) {
 			rad = i * M_PI / 180.;
-			m_scene->addEllipse(center + step * (arccircle)*cos(rad) / 2, center + step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+			m_scene->addEllipse(center + (double)step * (arccircle)*cos(rad) / 2, center + (double)step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
 		}
 	}
 	else
 	{
 		for (double i = 0; i < fromangle; ++i) {
 			rad = i * M_PI / 180.;
-			m_scene->addEllipse(center + step * (arccircle)*cos(rad) / 2, center + step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+			m_scene->addEllipse(center + (double)step * (arccircle)*cos(rad) / 2, center + (double)step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
 		}
 		for (double i = toangle; i < 360; ++i) {
 			rad = i * M_PI / 180.;
-			m_scene->addEllipse(center + step * (arccircle)*cos(rad) / 2, center + step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+			m_scene->addEllipse(center + (double)step * (arccircle)*cos(rad) / 2, center + (double)step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
 		}
 	}
 }

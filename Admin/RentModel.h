@@ -24,9 +24,9 @@ public:
     bool checkCarUsed(QSqlDatabase db, const QDateTime& fromDate, const QDateTime& toDate, QStringList& ids);
     bool getLastDate(QSqlDatabase db, int carid, QDateTime& last);
 
+    static const QString DateTimeFormat;
 protected:
     static const QString RentTableName;
-    static const QString DateTimeFormat;
 
     QTableView* m_view;
 };

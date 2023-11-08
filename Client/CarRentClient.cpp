@@ -11,6 +11,8 @@
 #include <QComboBox>
 #include <QSpinBox>
 
+#include <QSqlQuery.h>
+#include <QSqlRecord.h>
 
 //--------------------------------------------------------------------------------
 CarRentClientForm::CarRentClientForm(QWidget* parent)
@@ -256,6 +258,36 @@ void CarRentClientForm::buyTrip() {
 
 	QStringList ids;
 	if (m_rentModel->checkCarUsed(m_db, ui.dateFrom->dateTime(), ui.dateTo->dateTime(), ids) && ids.size() && (ids.indexOf(QString::number(m_carSelected)) >= 0)) {
+
+
+		QSqlQuery query2(m_db);
+
+		QString q2 = QString("WITH max_dates AS ( SELECT car, MAX(date_to) AS max_date FROM rents GROUP BY car) SELECT MIN(max_date) FROM max_dates; ");
+		query2.prepare(q2);
+
+		if (query2.exec()) {
+			if (query2.next()) {
+
+				QSqlRecord reci2 = query2.record();
+
+
+				QDateTime last = QDateTime::fromString(reci2.value(0).toString(), RentModel::DateTimeFormat);
+				if (last > QDateTime::currentDateTime()) {
+					QMessageBox msgBox;
+					msgBox.setText("No Car is avaliable! Next avaliable date: " + reci2.value(0).toString());
+					//msgBox.setInformativeText("Do you want to save your changes?");
+					//msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+					//msgBox.setDefaultButton(QMessageBox::Save);
+					int ret = msgBox.exec();
+					return;
+
+				}
+			}
+		}
+
+
+
+
 		QMessageBox msgBox;
 		msgBox.setText("Car Not avaliable!");
 		//msgBox.setInformativeText("Do you want to save your changes?");
@@ -363,15 +395,6 @@ void CarRentClientForm::setRent(const QItemSelection& selected, const QItemSelec
 	auto  l = selected.at(0).topLeft();
 
 	int id;
-	/*QString name, surname, address, credit, driving;
-	if (m_userModel->getUser(m_db, l, id, name, surname, address, credit, driving)) {
-		ui.nedUserName->setText(name);
-		ui.nedUserSurname->setText(surname);
-		ui.nedUserAddress->setText(address);
-		ui.nedUserCredtCard->setText(credit);
-		ui.nedUserDrivingLic->setText(driving);
-		ui.nedUserId->setText(QString::number(id));
-	}*/
 }
 //--------------------------------------------------------------------------------
 
