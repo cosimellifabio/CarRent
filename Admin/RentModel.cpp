@@ -3,6 +3,17 @@
 #include <QSqlRecord.h>
 #include <QDebug.h>
 
+double minAngle(int from, int to) {
+    int r = abs(from - to);
+    if (360 - r < r)
+        r = 360 - r;
+    return r;
+}
+
+double arc(int from, int to, int radius) {
+    return ((double)minAngle(from, to)) * radius * M_PI / 360.;
+}
+
 const QString RentModel::RentTableName = "rents";
 const QString RentModel::DateTimeFormat = "yyyy-MM-ddThh:mm:ss.zzz";// "yyyy-MM-dd hh:mm:ss";
 
@@ -173,3 +184,26 @@ bool RentModel::getLastDate(QSqlDatabase db, int carid, QDateTime& last)
     return false;
 }
 //--------------------------------------------------------------------------------
+int RentModel::getRentArcLength(int fromloc, int toloc, int fromangle, int toangle)
+{
+    // from-to or to-from have the same price, calc min length
+    int n_jump = abs(fromloc - toloc);
+    int min_id = (fromloc);
+    if (min_id > toloc)
+        min_id = toloc;
+
+    return (int)(arc(fromangle, toangle, min_id * 5));
+}
+//--------------------------------------------------------------------------------
+int RentModel::getRentLineLength(int fromloc, int toloc, int fromangle, int toangle)
+{
+    // from-to or to-from have the same price, calc min length
+    int n_jump = abs(fromloc - toloc);
+    int min_id = (fromloc);
+    if (min_id > toloc)
+        min_id = toloc;
+    if (fromloc == 1) // this is an exception
+        n_jump++;
+
+    return (int)(n_jump * 5 + 5);
+}

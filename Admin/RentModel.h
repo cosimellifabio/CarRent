@@ -15,7 +15,8 @@ public:
     bool getRent(QSqlDatabase db, const QModelIndex& i, int & id, int &fromloc, int &toloc, int &fromangle, int &toangle);
     bool selectRent(QSqlDatabase db, int id, int& fromloc, int& toloc, int& fromangle, int& toangle);
 
-
+    int getRentArcLength(int fromloc, int toloc, int fromangle, int toangle);
+    int getRentLineLength(int fromloc, int toloc, int fromangle, int toangle);
 
     bool deleteRent(QSqlDatabase db, int id);
     bool edit(QSqlDatabase db, int id, const QString& name, const QString& brand, const QString& tail_number, const QString& class1);

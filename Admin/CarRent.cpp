@@ -10,6 +10,7 @@
 
 #include <QSqlQuery.h>
 #include <QSqlRecord.h>
+
 //--------------------------------------------------------------------------------
 CarRentForm::CarRentForm(QWidget* parent)
 	: QWidget(parent)
@@ -59,13 +60,13 @@ CarRentForm::CarRentForm(QWidget* parent)
 	QPen outlinePen(Qt::white);
 	outlinePen.setWidth(2);
 
-	int w = ui.graphicsView ->width() - 50;
+	int w = ui.graphicsView->width() - 50;
 	int step = w / 3;
 	int center = w / 2;
 	// addEllipse(x,y,w,h,pen,brush)
-	m_scene->addEllipse(0, 0, w, w, outlinePen, QBrush(Qt::red));
-	m_scene->addEllipse(step/2, step/2, w - step, w - step, outlinePen, QBrush(Qt::green));
-	m_scene->addEllipse(step, step, w - 2*step, w - 2*step, outlinePen, QBrush(Qt::red));
+	m_scene->addEllipse(0, 0, w, w, outlinePen, QBrush(Qt::cyan));
+	m_scene->addEllipse(step / 2, step / 2, w - step, w - step, outlinePen, QBrush(Qt::green));
+	m_scene->addEllipse(step, step, w - 2 * step, w - 2 * step, outlinePen, QBrush(Qt::cyan));
 }
 //--------------------------------------------------------------------------------
 
@@ -192,6 +193,12 @@ void CarRentForm::setCar(const QItemSelection& selected, const QItemSelection& d
 	auto  l = selected.at(0).topLeft();
 
 	int id, ns;
+	int w = ui.graphicsView->width() - 50;
+	int step = w / 3;
+	int center = w / 2;
+	QPen outlinePen(Qt::magenta);
+	outlinePen.setWidth(2);
+
 	QString name, surname, address, credit;
 	if (m_carModel->getCar(m_db, l, id, name, surname, address, credit, ns)) {
 		ui.nedCarName->setText(name);
@@ -199,6 +206,106 @@ void CarRentForm::setCar(const QItemSelection& selected, const QItemSelection& d
 		ui.nedCarTail->setText(address);
 		ui.nedCarClass->setText(credit);
 		ui.nedCarId->setText(QString::number(id));
+
+		QSqlQuery query2(m_db);
+
+		QString q2 = QString("SELECT name, fromloc, from_angle, toloc, to_angle, passengers, (EXTRACT(EPOCH FROM ( NOW() - date_from)) * 100.)/ EXTRACT(EPOCH FROM ( date_to - date_from)) as dif FROM public.rents  ");
+		q2 += QString(" WHERE (public.rents.car =  %1) AND (public.rents.date_from < now()) AND (public.rents.date_to > now()) ").arg(id);
+		query2.prepare(q2);
+
+		if (query2.exec()) {
+			if (query2.next()) {
+
+				QSqlRecord reci2 = query2.record();
+				int fromloc = reci2.value(1).toInt();
+				int toloc = reci2.value(3).toInt();
+				int fromangle = reci2.value(2).toInt();
+				int toangle = reci2.value(4).toInt();
+
+				drawRent(fromloc, toloc, fromangle, toangle);
+
+				int perc = reci2.value(6).toInt();
+				int kmArc = m_rentModel->getRentArcLength(fromloc, toloc, fromangle, toangle);
+				int kmLine = m_rentModel->getRentLineLength(fromloc, toloc, fromangle, toangle);//   (int)(arc(ui.sbxFrom->value(), ui.sbxTo->value(), min_id * 5) + n_jump * 5 + 5);
+
+				double distDone = (kmArc + kmLine) * perc / 100;
+				bool isonarc = false;
+				if ((fromloc < toloc) && (distDone < kmArc))
+					isonarc = true;
+				else if ((fromloc > toloc) && (distDone > kmLine))
+					isonarc = true;
+
+				if (isonarc) {
+					// is on arc
+					if (fromloc > toloc)
+						distDone -= kmLine;
+
+					if (toloc < fromloc) {
+
+						fromloc = toloc;
+					}
+					double angle = 0;
+					if (toangle - fromangle < 180)
+					{
+						double deg = distDone * abs(fromangle - toangle) / (double)kmArc;
+						angle = fromangle + deg;
+					}
+					else
+					{
+						double deg = distDone * (360. - (double)abs(fromangle - toangle)) / (double)kmArc;
+						angle = fromangle - deg;
+					}
+					double 	rad = (double)(angle)*M_PI / 180.;
+					m_scene->addEllipse(center + (double)step * (fromloc)*cos(rad) / 2, center + (double)step * (fromloc)*sin(rad) / 2, 4, 4, outlinePen, QBrush(Qt::magenta));
+				}
+				else {
+					// is on line
+					if (fromloc < toloc)
+						distDone -= kmArc;
+					double rad = 0;
+					double hops = abs(fromloc - toloc);
+
+					if (toloc < fromloc) {
+
+						rad = fromangle * M_PI / 180.;
+						hops = -hops;
+					}
+					else {
+						rad = toangle * M_PI / 180.;
+					}
+					//if (fromloc == 1)
+					//	distDone -= 5;
+
+					distDone = distDone * hops / (double)kmLine;
+					m_scene->addEllipse(center + step * (fromloc + distDone) * cos(rad) / 2, center + step * (fromloc + distDone) * sin(rad) / 2, 4, 4, outlinePen, QBrush(Qt::magenta));
+				}
+			}
+			else {
+				// CAR IS FREE NOW last rent ending point is the position
+				QSqlQuery query2(m_db);
+
+				QString q2 = QString("SELECT name, fromloc, from_angle, toloc, to_angle FROM public.rents  ");
+				q2 += QString(" WHERE (public.rents.car =  %1) AND (public.rents.date_to < now()) ORDER BY public.rents.date_to DESC LIMIT 1 ").arg(id);
+				query2.prepare(q2);
+
+				if (query2.exec()) {
+					if (query2.next()) {
+
+						QSqlRecord reci2 = query2.record();
+
+						int fromloc = reci2.value(1).toInt();
+						int toloc = reci2.value(3).toInt();
+						int fromangle = reci2.value(2).toInt();
+						int toangle = reci2.value(4).toInt();
+
+						double rad = toangle * M_PI / 180.;
+						drawRent(fromloc, toloc, fromangle, toangle);
+						m_scene->addEllipse(center + step * (toloc)*cos(rad) / 2, center + step * (toloc)*sin(rad) / 2, 4, 4, outlinePen, QBrush(Qt::magenta));
+					}
+				}
+			}
+		}
+
 	}
 
 }
@@ -213,65 +320,70 @@ void CarRentForm::setRent(const QItemSelection& selected, const QItemSelection& 
 	int id, fromloc, toloc, fromangle, toangle;
 	if (m_rentModel->getRent(m_db, l, id, fromloc, toloc, fromangle, toangle)) {
 
-		m_scene->clear();
-		QPen outlinePen(Qt::white);
-		outlinePen.setWidth(2);
+		drawRent(fromloc, toloc, fromangle, toangle);
+	}
+}
+//--------------------------------------------------------------------------------
 
-		int w = ui.graphicsView->width() - 50;
-		int step = w / 3;
-		int center = w / 2;
-		// addEllipse(x,y,w,h,pen,brush)
-		m_scene->addEllipse(0, 0, w, w, outlinePen, QBrush(Qt::red));
-		m_scene->addEllipse(step / 2, step / 2, w - step, w - step, outlinePen, QBrush(Qt::green));
-		m_scene->addEllipse(step, step, w - 2 * step, w - 2 * step, outlinePen, QBrush(Qt::red));
+void CarRentForm::drawRent(int fromloc, int toloc, int fromangle, int toangle)
+{
 
-		QPen outlinePen2(Qt::black);
-		outlinePen2.setWidth(4);
+	m_scene->clear();
+	QPen outlinePen(Qt::white);
+	outlinePen.setWidth(2);
 
-		double rad = fromangle * M_PI / 180.;
-		m_scene->addEllipse(center + step * (fromloc)* cos(rad) / 2, center + step * (fromloc) * sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+	int w = ui.graphicsView->width() - 50;
+	int step = w / 3;
+	int center = w / 2;
+	// addEllipse(x,y,w,h,pen,brush)
+	m_scene->addEllipse(0, 0, w, w, outlinePen, QBrush(Qt::cyan));
+	m_scene->addEllipse(step / 2, step / 2, w - step, w - step, outlinePen, QBrush(Qt::green));
+	m_scene->addEllipse(step, step, w - 2 * step, w - 2 * step, outlinePen, QBrush(Qt::cyan));
 
+	QPen outlinePen2(Qt::black);
+	outlinePen2.setWidth(4);
+
+	double rad = fromangle * M_PI / 180.;
+	m_scene->addEllipse(center + step * (fromloc)*cos(rad) / 2, center + step * (fromloc)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+
+	rad = toangle * M_PI / 180.;
+	m_scene->addEllipse(center + step * (toloc)*cos(rad) / 2, center + step * (toloc)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+
+	int arccircle = fromloc;
+	if (toloc < fromloc) {
+
+		arccircle = toloc;
+		rad = fromangle * M_PI / 180.;
+	}
+	else {
 		rad = toangle * M_PI / 180.;
-		m_scene->addEllipse(center + step * (toloc) * cos(rad) / 2, center + step * (toloc)* sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+	}
+	m_scene->addLine(center + step * (fromloc)*cos(rad) / 2, center + step * (fromloc)*sin(rad) / 2, center + step * (toloc)*cos(rad) / 2, center + step * (toloc)*sin(rad) / 2, outlinePen2);
 
-		int arccircle = fromloc;
-		if (toloc < fromloc) {
-
-			arccircle = toloc;
-			rad = fromangle * M_PI / 180.;
-		}
-		else  {
-			rad =toangle * M_PI / 180.;
-		}
-		m_scene->addLine(center + step * (fromloc)*cos(rad) / 2, center + step * (fromloc)*sin(rad) / 2, center + step * (toloc)*cos(rad) / 2, center + step * (toloc)*sin(rad) / 2, outlinePen2);
-
-		if (toangle < fromangle) {
-			int s = fromangle;
-			fromangle = toangle;
-			toangle = s;
-		}
-
-		if (toangle - fromangle < 180)
-		{
-			for (double i = fromangle; i < toangle; ++i) {
-				rad = i * M_PI / 180.;
-				m_scene->addEllipse(center + step * (arccircle)*cos(rad) / 2, center + step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
-			}
-		}
-		else
-		{
-			for (double i = 0; i < fromangle; ++i) {
-				rad = i * M_PI / 180.;
-				m_scene->addEllipse(center + step * (arccircle)*cos(rad) / 2, center + step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
-			}
-			for (double i = toangle; i < 360; ++i) {
-				rad = i * M_PI / 180.;
-				m_scene->addEllipse(center + step * (arccircle)*cos(rad) / 2, center + step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
-			}
-		}
-
+	if (toangle < fromangle) {
+		int s = fromangle;
+		fromangle = toangle;
+		toangle = s;
 	}
 
+	if (toangle - fromangle < 180)
+	{
+		for (double i = fromangle; i < toangle; ++i) {
+			rad = i * M_PI / 180.;
+			m_scene->addEllipse(center + step * (arccircle)*cos(rad) / 2, center + step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+		}
+	}
+	else
+	{
+		for (double i = 0; i < fromangle; ++i) {
+			rad = i * M_PI / 180.;
+			m_scene->addEllipse(center + step * (arccircle)*cos(rad) / 2, center + step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+		}
+		for (double i = toangle; i < 360; ++i) {
+			rad = i * M_PI / 180.;
+			m_scene->addEllipse(center + step * (arccircle)*cos(rad) / 2, center + step * (arccircle)*sin(rad) / 2, 2, 2, outlinePen2, QBrush(Qt::black));
+		}
+	}
 }
 //--------------------------------------------------------------------------------
 
@@ -350,13 +462,13 @@ void CarRentForm::report() {
 					if (query2.next()) {
 						QSqlRecord reci2 = query2.record();
 						outStream << "\tCAR IS IN RENT NOW " << endl;
-						outStream << "\t\tTRIP Name: " << reci2.value(0).toString() << endl;
-						outStream << "\t\tTRIP Loc From: " << reci2.value(1).toString() << endl;
-						outStream << "\t\tTRIP Loc From Angle: " << reci2.value(2).toString() << endl;
-						outStream << "\t\tTRIP Loc To: " << reci2.value(3).toString() << endl;
-						outStream << "\t\tTRIP Loc To Angle: " << reci2.value(4).toString() << endl;
-						outStream << "\t\tTRIP Passengers: " << reci2.value(5).toString() << endl;
-						outStream << "\t\tTRIP Loc IS At: " << reci2.value(6).toInt() << "% of entire trip" << endl;
+						outStream << "\t\tRENT Name: " << reci2.value(0).toString() << endl;
+						outStream << "\t\tRENT Loc From: " << reci2.value(1).toString() << endl;
+						outStream << "\t\tRENT Loc From Angle: " << reci2.value(2).toString() << endl;
+						outStream << "\t\tRENT Loc To: " << reci2.value(3).toString() << endl;
+						outStream << "\t\tRENT Loc To Angle: " << reci2.value(4).toString() << endl;
+						outStream << "\t\tRENT Passengers: " << reci2.value(5).toString() << endl;
+						outStream << "\t\tRENT Loc IS At: " << reci2.value(6).toInt() << "% of entire RENT" << endl;
 					}
 					else {
 						outStream << "\tCAR IS FREE NOW " << endl;
@@ -364,7 +476,7 @@ void CarRentForm::report() {
 					}
 				}
 
-				outStream << "\tCAR NEXT PROGRAMMED TRIP: " << endl;
+				outStream << "\tCAR NEXT PROGRAMMED RENT: " << endl;
 				QSqlQuery query3(m_db);
 
 				q2 = QString("SELECT name, fromloc, from_angle, toloc, to_angle, passengers, date_from, date_to FROM public.rents  ");
@@ -374,14 +486,14 @@ void CarRentForm::report() {
 				if (query3.exec()) {
 					while (query3.next()) {
 						QSqlRecord reci3 = query3.record();
-						outStream << "\n\t\tTRIP Name: " << reci3.value(0).toString() << endl;
-						outStream << "\t\tTRIP Date From: " << reci3.value(6).toString() << endl;
-						outStream << "\t\tTRIP Date To: " << reci3.value(7).toString() << endl;
-						outStream << "\t\tTRIP Loc From: " << reci3.value(1).toString() << endl;
-						outStream << "\t\tTRIP Loc From Angle: " << reci3.value(2).toString() << endl;
-						outStream << "\t\tTRIP Loc To: " << reci3.value(3).toString() << endl;
-						outStream << "\t\tTRIP Loc To Angle: " << reci3.value(4).toString() << endl;
-						outStream << "\t\tTRIP Passengers: " << reci3.value(5).toString() << endl;
+						outStream << "\n\t\tRENT Name: " << reci3.value(0).toString() << endl;
+						outStream << "\t\tRENT Date From: " << reci3.value(6).toString() << endl;
+						outStream << "\t\tRENT Date To: " << reci3.value(7).toString() << endl;
+						outStream << "\t\tRENT Loc From: " << reci3.value(1).toString() << endl;
+						outStream << "\t\tRENT Loc From Angle: " << reci3.value(2).toString() << endl;
+						outStream << "\t\tRENT Loc To: " << reci3.value(3).toString() << endl;
+						outStream << "\t\tRENT Loc To Angle: " << reci3.value(4).toString() << endl;
+						outStream << "\t\tRENT Passengers: " << reci3.value(5).toString() << endl;
 					}
 				}
 			}

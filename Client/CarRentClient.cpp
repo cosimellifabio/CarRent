@@ -11,18 +11,6 @@
 #include <QComboBox>
 #include <QSpinBox>
 
-double minAngle(int from, int to) {
-	int r = abs(from - to);
-	if (360 - r < r)
-		r = 360 - r;
-	return r;
-}
-
-double arc(int from, int to, int radius) {
-	return ((double)minAngle(from, to)) * radius * M_PI / 360.;
-}
-
-
 
 //--------------------------------------------------------------------------------
 CarRentClientForm::CarRentClientForm(QWidget* parent)
@@ -350,15 +338,7 @@ void CarRentClientForm::calculateTrip(int &km, int &price, int &seconds) {
 	int idTo, beforeTo, afterTo, hopsTo, priceTo;
 	m_locModel->selectLocation(m_db, ui.cmbTo->currentText(), idTo, beforeTo, afterTo, hopsTo, priceTo);
 
-	// from-to or to-from have the same price, calc min length
-	int n_jump = abs(idFrom - idTo);
-	int min_id = (idFrom);
-	if (min_id > idTo)
-		min_id = idTo;
-	if (idFrom == 1) // this is an exception
-		n_jump++;
-
-	km = (int)(arc(ui.sbxFrom->value(), ui.sbxTo->value(), min_id * 5) + n_jump * 5 + 5);
+	km = m_rentModel->getRentArcLength(idFrom, idTo, ui.sbxFrom->value(), ui.sbxTo->value()) + m_rentModel->getRentLineLength(idFrom, idTo, ui.sbxFrom->value(), ui.sbxTo->value());//   (int)(arc(ui.sbxFrom->value(), ui.sbxTo->value(), min_id * 5) + n_jump * 5 + 5);
 	price = (int)((double)km / (double)pricekm + 0.5);
 	seconds = (int)((double)(km * 3600.) / (double)speed + 0.5);
 

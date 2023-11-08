@@ -39,6 +39,7 @@ protected:
 	void refreshRent();
 	void refreshUser();
 	void refreshCar();
+	void drawRent(int fromloc, int toloc, int fromangle, int toangle);
 
 private slots:
     void btnExitSlot();
